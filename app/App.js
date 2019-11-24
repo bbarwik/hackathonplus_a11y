@@ -30,7 +30,8 @@ export default class Test extends React.Component {
     hasCameraPermission: null,
     type: Camera.Constants.Type.back,
     image: null,
-    imagebase64: ""
+    imagebase64: "",
+    wheelchairType: null
   }
 
   componentDidMount = async () => {
@@ -147,7 +148,8 @@ export default class Test extends React.Component {
       measurementEnd: time(),
       sensors: this.state.sensors,
       locations: this.state.locations,
-      reports: this.state.reports
+      reports: this.state.reports,
+      wheelchairType: this.state.wheelchairType
     });
 
     this.state.measurementStart = time();
@@ -170,6 +172,22 @@ export default class Test extends React.Component {
           <Text>Intializing application</Text>
         </View>
       );  
+    }
+    if(!this.state.wheelchairType) {
+      return (<View style={styles.container2}>
+          <TouchableOpacity style={{flex: 1, margin: 10,alignItems: 'center', justifyContent: 'center', backgroundColor: '#AAAAAA', padding: 10}} onPress={() => this.setState({wheelchairType: 1})}>
+            <Text style={{fontSize: 20}}>Wózek ręczny</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={{flex: 1, margin: 10,alignItems: 'center', justifyContent: 'center', backgroundColor: '#BBBBBB', padding: 10}} onPress={() => this.setState({wheelchairType: 2})}>
+            <Text style={{fontSize: 20}}>Wózek napędzany silnikiem / elektryczny</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={{flex: 1, margin: 10,alignItems: 'center', justifyContent: 'center', backgroundColor: '#CCCCCC', padding: 10}} onPress={() => this.setState({wheelchairType: 3})}>
+            <Text style={{fontSize: 20}}>Napędzany hybrydowo (np. ręcznie + silnik)</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={{flex: 1, margin: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: '#DDDDDD', padding: 10}} onPress={() => this.setState({wheelchairType: 4})}>
+            <Text style={{fontSize: 20}}>Napędzany przez osobę drugą</Text>
+          </TouchableOpacity>
+        </View>);
     }
     if(this.state.camera) {
       let camera = null;
