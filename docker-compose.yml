@@ -1,0 +1,68 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:latest
+    volumes:
+      - hackathon-postgresql:/var/lib/postgresql/data
+    env_file:
+      - .envs/postgresql
+    environment:
+      # set `${PGDATA}` to a subdirectory because PostgreSQL needs this
+      # directory to be empty and there is already `.gitkeep` file there
+      - PGDATA=/var/lib/postgresql/data/postgresql_data
+
+  rabbitmq:
+    image: rabbitmq:3.7-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    env_file:
+      - .envs/rabbitmq
+    volumes:
+      - hackathon-rabbitmq:/var/lib/rabbitmq
+
+  redis:
+    image: redis:latest
+
+  app: &app
+    container_name: hackathon-app
+    build:
+      context: .
+      dockerfile: ./docker/local/backend/Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .envs/general
+      - .envs/flask
+      - .envs/celery
+      - .envs/postgresql
+    volumes:
+      - ./backend:/app
+      - ./shared/media:/app/shared/media
+      - ./shared/static:/app/shared/static
+      - ./shared/templates:/app/shared/templates
+
+  celeryworker:
+    <<: *app
+    container_name: hackathon-celeryworker
+    depends_on:
+      - rabbitmq
+      - redis
+    ports: []
+    command: /start_celeryworker.sh
+
+  celeryflower:
+    <<: *app
+    container_name: hackathon-celeryflower
+    depends_on:
+      - rabbitmq
+    ports:
+      - "5555:5555"
+    command: /start_celeryflower.sh
+
+volumes:
+  hackathon-rabbitmq:
+  hackathon-postgresql:
