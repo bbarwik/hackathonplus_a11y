@@ -117,6 +117,10 @@ export default class Test extends React.Component {
     this.state.magnet = [data.x.toFixed(3), data.y.toFixed(3), data.z.toFixed(3)];
   }
 
+  prepareReport = () => {
+    this.setState({camera: true, image: null});
+  }
+
   takePhoto = async () => {
     if (this.camera) {
       this.last_photo = await this.camera.takePictureAsync();
@@ -238,7 +242,7 @@ export default class Test extends React.Component {
         />          
         </MapView>
         <TouchableOpacity
-            onPress={() => this.setState({camera: true, image: null})}
+            onPress={this.prepareReport}
             style={[styles.bubble, styles.button]}
           >
             <Text style={styles.buttonText}>Zgłoś problem</Text>

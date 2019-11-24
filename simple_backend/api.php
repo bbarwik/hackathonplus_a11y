@@ -6,6 +6,6 @@ if(!$json || !$json->session) {
     die();    
 }
 
-file_put_contents("tracking/".(time()) . "_" . ($json->session).".log", json_encode($data), FILE_APPEND);
+file_put_contents("tracking/".(time()) . "_" . ($json->session).".log", json_encode($json, JSON_PRETTY_PRINT), FILE_APPEND);
 
 ?>
