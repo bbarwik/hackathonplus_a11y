@@ -1,12 +1,14 @@
 import React from 'react';
-import { StyleSheet, Text, View, Dimensions, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, Dimensions, TouchableOpacity, TextInput, Image } from 'react-native';
 import { DeviceMotion, Magnetometer } from 'expo-sensors';
 import MapView, { Marker, Overlay, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import * as Permissions from 'expo-permissions';
 import Api from './api';
+import { Camera } from 'expo-camera';
+import * as ImageManipulator from 'expo-image-manipulator';
 
-const SEND_INTERVAL = 30000;
+const SEND_INTERVAL = 60000;
 
 function time() { 
   return (new Date()).getTime(); 
@@ -18,19 +20,24 @@ export default class Test extends React.Component {
     errorMessage: null,
     measurementStart: 0,
     magnet: null,
+    camera: false,
     locations: [],
     sensors: [],
     reports: [],
     polyline: [],
     locationResult: null,
     coords: { latitude: 52.2297, longitude: -21.0122},
+    hasCameraPermission: null,
+    type: Camera.Constants.Type.back,
+    image: null,
+    imagebase64: ""
   }
 
   componentDidMount = async () => {
-    let { status } = await Permissions.askAsync(Permissions.LOCATION);
+    let { status } = await Permissions.askAsync(Permissions.LOCATION, Permissions.CAMERA);
     if (status !== 'granted') {
       this.setState({
-        errorMessage: 'Permission to access location was denied',
+        errorMessage: 'Permission to access camera or location was denied',
       });
       return;
     }
@@ -109,11 +116,29 @@ export default class Test extends React.Component {
     this.state.magnet = [data.x.toFixed(3), data.y.toFixed(3), data.z.toFixed(3)];
   }
 
+  takePhoto = async () => {
+    if (this.camera) {
+      this.last_photo = await this.camera.takePictureAsync();
+      if(!this.last_photo) {
+        throw Error("Can't take photo");
+        return;
+      }
+      let image = await ImageManipulator.manipulateAsync(this.last_photo.uri, [{resize: {width: 640}}], {base64: true});
+      this.setState({image: image.uri, imagebase64: image.base64});
+    }
+  }
+
   report = (type) => {
+    // TODO: more advanced report, description/photo, etc
     this.state.reports.push({
       type: type,
-      time: time()
+      time: time(),
+      text: this.state.text,
+      image: this.state.imagebase64
     });
+    this.setState({
+      camera: false
+    })
   }
 
   sendData = () => {
@@ -132,6 +157,13 @@ export default class Test extends React.Component {
   }
 
   render = () => {
+    if(this.state.errorMessage) {
+      return (
+        <View style={styles.container}>
+          <Text>{this.state.errorMessage}</Text>
+        </View>
+      );  
+    }
     if(!this.state.initialized) {
       return (
         <View style={styles.container}>
@@ -139,12 +171,29 @@ export default class Test extends React.Component {
         </View>
       );  
     }
-    if(this.state.errorMessage) {
+    if(this.state.camera) {
+      let camera = null;
+      if(this.state.image) {
+        camera = <Image source={{uri: this.state.image}} style={{ flex: 5 }} />;
+      } else {
+        camera = <Camera style={{ flex: 5 }} type={this.state.type} ref={ref => { this.camera = ref; }} />;
+      }
       return (
-        <View style={styles.container}>
-          <Text>{this.state.errorMessage}</Text>
+        <View style={styles.container2}>
+          {camera}
+          <TouchableOpacity style={{height: 50, alignItems: 'center', backgroundColor: '#DDDDDD', padding: 10}} onPress={this.takePhoto}>
+            <Text style={{fontSize: 20}}>Zrób zdjęcie</Text>
+          </TouchableOpacity>
+          <Text style={{fontSize: 20, textAlign: 'center', margin: 10}}>Opisz problem</Text>
+          <TextInput
+            style={{ flex: 2, borderColor: 'gray', borderWidth: 1, margin: 1, textAlignVertical: 'top' }}
+            onChangeText={text => this.setState({ text: text })}
+          />
+          <TouchableOpacity style={{height: 50, alignItems: 'center', backgroundColor: '#AAAAAA', padding: 10}} onPress={this.report}>
+            <Text style={{fontSize: 25, fontWeight: 'bold'}}>Wyślij zgłoszenie</Text>
+          </TouchableOpacity>
         </View>
-      );  
+      )      
     }
     return (
       <View style={styles.container}>
@@ -171,7 +220,7 @@ export default class Test extends React.Component {
         />          
         </MapView>
         <TouchableOpacity
-            onPress={() => this.report(1)}
+            onPress={() => this.setState({camera: true, image: null})}
             style={[styles.bubble, styles.button]}
           >
             <Text style={styles.buttonText}>Zgłoś problem</Text>
@@ -207,5 +256,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 20,
     marginBottom: 10
+  },
+  container2: {
+    flex: 1,
+    backgroundColor: '#fff',
   },
 });

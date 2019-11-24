@@ -1,6 +1,8 @@
 import Constants from 'expo-constants';
 const REPORT_URL = "http://m.bbarwik.com/a11y/api.php";
 
+// TODO: Use Advanced API instead os simple API, also error handling
+
 class API {
     send = (data) => {
         data.session = Constants.sessionId;
